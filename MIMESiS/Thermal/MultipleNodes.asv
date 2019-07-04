@@ -1,0 +1,119 @@
+% MIMESiS THERMAL SYSTEM DATA
+
+% First attempt of multiple nodes simulation. Hypotesis of SSC: 
+% Qinternal-Qoutput+Qinput=0
+%--------------------------------------------------------------------------
+% TO DO:
+% Check power dissipation from cpu and electric unit
+% Check the Saturn magnetosphere heat flux generation
+% Check the REF
+% Check alpha and eps OBDH ( copper and aluminium alloy:Aluminum 2024-T6)
+
+clear all; clc; close all
+time = 7200;
+set(0,'DefaultFigureWindowStyle','docked');
+set(0,'defaulttextInterpreter','latex');
+set(0,'defaultTextFontSize',12);
+set(0,'DefaultLegendFontSize',5);
+set(0,'defaultAxesFontSize',12);
+
+% Temperatures distribution plot
+
+Tds = 4;        % T deep space [K]
+
+Y = [238,343    %PCU [K]
+     243,323    %OBDH [K]
+     253,353    % Silicon detector(visible) [K]
+     60,150];   % Indium antimonide detector(infrared)[K]
+ Ym = mean(Y); T0 = mean(Ym);
+ 
+ T1_h = Y(2,2); T1_c = Y(2,1);% Hot anc cold T for OBDH [K]
+ T2_h = Y(1,2); T2_c = Y(1,1);% Hot anc cold T for EPS [K]
+ T3_h = Y(3,2); T3_c = Y(3,1);% Hot anc cold T for visible detector [K]
+ T4_h = Y(4,2); T4_c = Y(4,1);% Hot anc cold T for infrared detector [K]
+ 
+ figure ('Name','Operational T')
+    title('Operational Temperature ranges');
+    b=bar(Y,'BaseValue',T0);bl = b.BaseLine;c1 = bl.Color;
+    bl.Color = 'blue';
+    ylabel('T [K]');somenames={'PCDU';'OBDH Memory';'OBDH Processor';...
+           'Silicon detector';'Indium antimonide detector'};
+    set(gca,'xticklabel',somenames) 
+    ylim([50 400])
+    grid on;
+ 
+%% Payload data
+
+A_front = 1 * 0.1^2;    %Area in front of the planet 1dm^2 [m^2]
+A_side = 2 * A_front;   %Lateral area: 2U-cubesat considered [m^2]
+
+Gsc1 =151;               % Thermal conductiviy OBDH [W/m^2K]
+Gsc2 =10;                % Thermal conductiviy EPS[W/m^2K]
+Gsc3 =10;                % Thermal conductiviy visible detector[W/m^2K]
+Gsc4 =10;                % Thermal conductiviy infrared detector[W/m^2K]
+    
+M1 = 0.05;              % Mass of OBDH [kg]
+M2 = 0.1;               % Mass of EPS [kg]
+M3 = 0.5;               % Mass of visible detector [kg]
+M4 = 0.5;               % Mass of infrared detector [kg]
+
+REF = 1;                % Radiative Effective Factor (changes with altitude)
+
+% Internal heat dissipation
+
+Qdiss_hot1 = 1.5;       % Total heat dissipated by OBDH [W]
+Qdiss_hot2 = 0.2;       % Total heat dissipated by EPS [W]
+Qdiss_hot3 = 0;         % Total heat dissipated by visible detector [W]
+Qdiss_hot4= 0;          % Total heat dissipated by infrared detector [W]
+
+Qdiss_cold1 = 0.5;       % Total heat dissipated by OBDH [W]
+Qdiss_cold2 = 0.2;       % Total heat dissipated by EPS [W]
+Qdiss_cold3 = 0;         % Total heat dissipated by visible detector [W]
+Qdiss_cold4= 0;          % Total heat dissipated by infrared detector [W]
+
+% Absorbivity and emissivity
+
+alpha_1 = 0.87 ;        %7075 alluminium alloy lateral absorbivity(lateral)
+eps_1 =0.81;            %7075 alluminium alloy lateral emissivity(lateral)
+
+alpha_2 =0.87 ;          
+eps_2 = 0.81; 
+
+alpha_3 =1;             %Absorbivity of frontal face
+eps_3 = 1;              %Emissivity of frontal face
+
+alpha_4 =1;             %Absorbivity of frontal face
+eps_4 = 1;              %Emissivity of frontal face
+
+%% Hot case
+
+sigma = 5.67e-8;        % Stefan-B constant
+au = 1.496e11;
+L = 3.9e26;             % Luminosity of the Sun [W]
+WS_e = L /(4*pi*au^2);  % Solar flux density from 1 AU [W/m^2]
+Wir_e = 224;            % Heat flux radiation from Earth [W/m^2]
+a_e = 0.3;              % Earth's albedo
+
+QS_e1 = WS_e *A_side * REF;
+Qa_e1 = WS_e *A_side *alpha_1*a_e*REF;
+Qir_e1 = Wir_e*A_side *eps_1*REF;
+
+QS_e2 = WS_e *A_side * REF;
+Qa_e2 = WS_e *A_side *alpha_2*a_e*REF;
+Qir_e2 = Wir_e*A_side *eps_2*REF;
+
+QS_e3 = WS_e *A_front * REF;
+Qa_e3 = WS_e *A_front *alpha_3*a_e*REF;
+Qir_e3 = Wir_e*A_front *eps_3*REF;
+
+QS_e2 = WS_e *A_side * REF;
+Qa_e2 = WS_e *A_side *alpha_2*a_e*REF;
+Qir_e2 = Wir_e*A_side *eps_2*REF;
+
+
+
+model = 'MultipleN_HotCase.slx';
+load_system(model)
+sim(model)
+
+
